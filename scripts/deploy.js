@@ -12,6 +12,33 @@ const tokens = (n) => {
 }
 
 async function main() {
+  //setup accounts
+  const [deployer] = await ethers.getSigners()
+
+  //deploy unishop
+  const Unishop = await hre.ethers.getContractFactory("Unishop")
+  const unishop = await Unishop.deploy()
+  await unishop.deployed()
+
+  console.log(`Deployed Unishop Contract at: ${unishop.address}\n`)
+
+  //listing items
+  for (let i = 0; i < items.length; i++) {
+    const transaction = await unishop.connect(deployer).list(
+      items[i].id,
+      items[i].name,
+      items[i].category,
+      items[i].image,
+      tokens(items[i].price),
+      items[i].rating,
+      items[i].stock,
+
+    )
+
+    await transaction.wait()
+
+    console.log(`listed item ${items[i].id}: ${items[i].name}`)
+  }
 
 }
 
