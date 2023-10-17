@@ -140,6 +140,7 @@ describe("Unishop", () => {
         })
     })
 
+    //Failure case added
     describe('Failure', () => {
       it('Rejects invalid owner', async () => {
         const invalidOwner = !onlyOwner
