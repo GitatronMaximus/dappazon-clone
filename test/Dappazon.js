@@ -19,7 +19,7 @@ describe("Unishop", () => {
 
   beforeEach(async () => {
     //setup accounts
-    [deployer, buyer] = await ethers.getSigners()
+    [deployer, buyer, attacker] = await ethers.getSigners()
 
     // Deploy contract
     const Unishop = await ethers.getContractFactory("Unishop")
@@ -108,11 +108,13 @@ describe("Unishop", () => {
   })
 
   describe("Withdrawing", () => {
-    let balanceBefore, onlyOwner
+
+    let balanceBefore, onlyOwner, amount
 
     describe('Success', () => {
 
       beforeEach(async () => {
+
       // List an item
         let transaction = await unishop.connect(deployer).list(ID, NAME, CATEGORY, IMAGE, COST, RATING, STOCK)
         await transaction.wait()
@@ -142,12 +144,14 @@ describe("Unishop", () => {
 
     //Failure case added
     describe('Failure', () => {
+
       it('Rejects invalid owner', async () => {
-        const invalidOwner = !onlyOwner
-
-        expect(invalidOwner).to.be.reverted
-
+        expect(unishop.connect(attacker).withdraw()).to.be.reverted              
+      })
+      it('Rejects insufficient buyer balance', async () => {
+        const result = await ethers.provider.getBalance(buyer.address)
+        expect(result).to.be.greaterThan(COST)
+      })
     })
-   })
   })
 })  
