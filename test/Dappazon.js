@@ -67,8 +67,14 @@ describe("Unishop", () => {
     it("Emits List event", () => {
       expect(transaction).to.emit(unishop, "List")
     })
-  })
 
+  describe('Failure', async () => {
+
+    it('Rejects invalid user listing', async () => {
+      await expect(unishop.connect(attacker).list(ID, NAME, CATEGORY, IMAGE, COST, RATING, STOCK)).to.be.reverted
+    })
+  })
+})
   describe("Buying", () => {
     let transaction
 
@@ -105,11 +111,17 @@ describe("Unishop", () => {
       expect(transaction).to.emit(unishop, "Buy")
     })
 
+  describe('Failure', async () => {
+
+    it('Rejects invalid user listing', async () => {
+      await expect(unishop.connect(attacker).list(ID, NAME, CATEGORY, IMAGE, COST, RATING, STOCK)).to.be.revertedWith("Unishop: You aren't the owner")
+    })
   })
+})
 
   describe("Withdrawing", () => {
 
-    let balanceBefore, onlyOwner, amount
+    let balanceBefore
 
     describe('Success', () => {
 
@@ -142,15 +154,10 @@ describe("Unishop", () => {
         })
     })
 
-    //Failure case added
     describe('Failure', () => {
 
-      it('Rejects invalid owner', async () => {
-        expect(unishop.connect(attacker).withdraw()).to.be.reverted              
-      })
-      it('Rejects insufficient buyer balance', async () => {
-        const result = await ethers.provider.getBalance(buyer.address)
-        expect(result).to.be.greaterThan(COST)
+      it('Rejects invalid owner withdrawal', async () => {
+        await expect(unishop.connect(attacker).withdraw()).to.be.revertedWith("Unishop: You aren't the owner")              
       })
     })
   })

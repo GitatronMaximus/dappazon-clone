@@ -29,7 +29,7 @@ contract Unishop {
 
 	//Ensure only owner can list items
 	modifier onlyOwner() {
-		require(msg.sender == owner);
+		require(msg.sender == owner, "Unishop: You aren't the owner");
 		_;
 	}
 
