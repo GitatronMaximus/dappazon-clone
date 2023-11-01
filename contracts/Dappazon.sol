@@ -3,6 +3,7 @@ pragma solidity ^0.8.9;
 
 contract Unishop {
 	address public owner;
+	address public users;
 
 	struct Item {
 		uint256 id;
@@ -18,8 +19,11 @@ contract Unishop {
 		uint256 time;
 		Item item;
 	}
-	//list items to blockchain (like a database)
+	//charge fee for listing
+	address public feeAccount;
+	uint256 public feePercent;
 
+	//list items to blockchain (like a database)
 	mapping(uint256 => Item) public items;
 	mapping(address => uint256) public orderCount;
 	mapping(address => mapping(uint256 => Order)) public orders;
@@ -29,11 +33,20 @@ contract Unishop {
 
 	//Ensure only owner can list items
 	modifier onlyOwner() {
+		require(msg.sender == owner);
 		require(msg.sender == owner, "Unishop: You aren't the owner");
 		_;
 	}
+	//Ensure only approved user can list
+	modifier onlyApproved() {
+		require(msg.sender == users);
+		require(msg.sender == users, "Unishop: You aren't authorized");
+		_;
+	}
 
-	constructor() {
+	constructor(address _feeAccount, uint256 _feePercent) {
+		feeAccount = _feeAccount;
+		feePercent = _feePercent;
 		owner = msg.sender;
 	}
 
@@ -45,7 +58,7 @@ contract Unishop {
 		uint256 _cost,
 		uint256 _rating,
 		uint256 _stock
-	) public onlyOwner {
+	) public {
 
 		//create item struct
 		Item memory item = Item(
@@ -63,6 +76,30 @@ contract Unishop {
 
 		//emit an event
 		emit List(_name, _cost, _stock);
+	}
+
+	function list(
+		address _user,
+		uint256 _id, 
+		string memory _name, 
+		string memory _category,
+		string memory _image,
+		uint256 _cost,
+		uint256 _rating,
+		uint256 _stock
+	) internal {
+
+		uint256 _feeAmount = (_cost * feePercent) / 100;
+
+		items[_cost][msg.sender] = 
+			items[_cost][msg.sender] - 
+			(_cost + _feeAmount);
+		
+		items[_cost][_user] = items[_cost][_user] + _cost;
+
+		items[_cost][feeAccount] = 
+			items[_cost][feeAccount] +
+			 _feeAmount;
 	}
 
 	//Buy products

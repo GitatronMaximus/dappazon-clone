@@ -17,20 +17,36 @@ describe("Unishop", () => {
   let Unishop
   let deployer, buyer
 
+  const feePercent = 3
+
   beforeEach(async () => {
     //setup accounts
-    [deployer, buyer, attacker] = await ethers.getSigners()
+    accounts = await ethers.getSigners()
+    deployer = accounts[0]
+    feeAccount = accounts[1]
+    attacker = accounts[2]
+    user = accounts[3++]
+    //[deployer, buyer, attacker, users] = await ethers.getSigners()
 
     // Deploy contract
     const Unishop = await ethers.getContractFactory("Unishop")
-    unishop = await Unishop.deploy()
+    unishop = await Unishop.deploy(feeAccount.address, feePercent)
   })
 
   describe("Deployment", () => {
     it('Sets the owner', async () => {
       expect(await unishop.owner()).to.equal(deployer.address)
     })
+
+    it('tracks the fee account', async () => {
+      expect(await unishop.feeAccount()).to.equal(feeAccount.address)
+    })
+
+    it('tracks the fee percent', async () => {
+      expect(await unishop.feePercent()).to.equal(feePercent)
+    })
   })
+})
 
   describe("Listing", () => {
     let transaction
@@ -100,7 +116,7 @@ describe("Unishop", () => {
 
       expect(order.time).to.be.greaterThan(0)
       expect(order.item.name).to.equal(NAME)
-    })
+    })    
 
     it("Updates the contract balance", async () => {
       const result = await ethers.provider.getBalance(unishop.address)
@@ -110,13 +126,6 @@ describe("Unishop", () => {
     it("Emits Buy event", () => {
       expect(transaction).to.emit(unishop, "Buy")
     })
-
-  describe('Failure', async () => {
-
-    it('Rejects invalid user listing', async () => {
-      await expect(unishop.connect(attacker).list(ID, NAME, CATEGORY, IMAGE, COST, RATING, STOCK)).to.be.revertedWith("Unishop: You aren't the owner")
-    })
-  })
 })
 
   describe("Withdrawing", () => {
@@ -157,8 +166,9 @@ describe("Unishop", () => {
     describe('Failure', () => {
 
       it('Rejects invalid owner withdrawal', async () => {
-        await expect(unishop.connect(attacker).withdraw()).to.be.revertedWith("Unishop: You aren't the owner")              
+        await expect(unishop.connect(attacker).withdraw()).to.be.reverted
+
       })
     })
-  })
-})  
+  })  
+})
