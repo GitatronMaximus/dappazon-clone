@@ -3,7 +3,7 @@ pragma solidity ^0.8.9;
 
 contract Unishop {
 	address public owner;
-	address public users;
+//	address public users;
 
 	struct Item {
 		uint256 id;
@@ -27,9 +27,15 @@ contract Unishop {
 	mapping(uint256 => Item) public items;
 	mapping(address => uint256) public orderCount;
 	mapping(address => mapping(uint256 => Order)) public orders;
+	mapping(address => bool) public isApproved;
+
 
 	event Buy(address buyer, uint256 orderId, uint256 itemId);
 	event List(string name, uint256 cost, uint256 quantity);
+
+//	function addApprovedUser(address _account) public {
+  // Update mapping
+//}
 
 	//Ensure only owner can list items
 	modifier onlyOwner() {
@@ -39,8 +45,7 @@ contract Unishop {
 	}
 	//Ensure only approved user can list
 	modifier onlyApproved() {
-		require(msg.sender == users);
-		require(msg.sender == users, "Unishop: You aren't authorized");
+		require(isApproved[msg.sender], "Unishop: You aren't authorized");
 		_;
 	}
 
@@ -76,30 +81,6 @@ contract Unishop {
 
 		//emit an event
 		emit List(_name, _cost, _stock);
-	}
-
-	function list(
-		address _user,
-		uint256 _id, 
-		string memory _name, 
-		string memory _category,
-		string memory _image,
-		uint256 _cost,
-		uint256 _rating,
-		uint256 _stock
-	) internal {
-
-		uint256 _feeAmount = (_cost * feePercent) / 100;
-
-		items[_cost][msg.sender] = 
-			items[_cost][msg.sender] - 
-			(_cost + _feeAmount);
-		
-		items[_cost][_user] = items[_cost][_user] + _cost;
-
-		items[_cost][feeAccount] = 
-			items[_cost][feeAccount] +
-			 _feeAmount;
 	}
 
 	//Buy products

@@ -14,10 +14,8 @@ const tokens = (n) => {
   const STOCK = 5
 
 describe("Unishop", () => {
-  let Unishop
-  let deployer, buyer
-
-  const feePercent = 3
+  let Unishop, unishop;
+  let deployer, buyer, feeAccount, attacker;
 
   beforeEach(async () => {
     //setup accounts
@@ -25,15 +23,19 @@ describe("Unishop", () => {
     deployer = accounts[0]
     feeAccount = accounts[1]
     attacker = accounts[2]
-    user = accounts[3++]
-    //[deployer, buyer, attacker, users] = await ethers.getSigners()
+    [deployer, buyer, attacker] = await ethers.getSigners()
+
+    feeAccount = deployer;
+    const feePercent = 3;
+
 
     // Deploy contract
-    const Unishop = await ethers.getContractFactory("Unishop")
+    Unishop = await ethers.getContractFactory("Unishop")
     unishop = await Unishop.deploy(feeAccount.address, feePercent)
   })
-
+})
   describe("Deployment", () => {
+
     it('Sets the owner', async () => {
       expect(await unishop.owner()).to.equal(deployer.address)
     })
@@ -46,12 +48,11 @@ describe("Unishop", () => {
       expect(await unishop.feePercent()).to.equal(feePercent)
     })
   })
-})
 
   describe("Listing", () => {
     let transaction
 
-    const ID = 1
+    const ID = 3
 
 
     beforeEach(async () => {
@@ -80,8 +81,8 @@ describe("Unishop", () => {
 
     })
 
-    it("Emits List event", () => {
-      expect(transaction).to.emit(unishop, "List")
+    it("Emits List event", async () => {
+      await expect(transaction).to.emit(unishop, "List")
     })
 
   describe('Failure', async () => {
@@ -94,7 +95,7 @@ describe("Unishop", () => {
   describe("Buying", () => {
     let transaction
 
-    const ID = 1
+    const ID = 3
 
 
     beforeEach(async () => {
@@ -126,7 +127,7 @@ describe("Unishop", () => {
     it("Emits Buy event", () => {
       expect(transaction).to.emit(unishop, "Buy")
     })
-})
+  })
 
   describe("Withdrawing", () => {
 
@@ -171,4 +172,3 @@ describe("Unishop", () => {
       })
     })
   })  
-})
