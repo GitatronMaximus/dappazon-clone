@@ -1,4 +1,4 @@
-# Unishop
+# Unishop project 1
 
 ## Technology Stack & Tools
 
