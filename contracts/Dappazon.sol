@@ -3,7 +3,6 @@ pragma solidity ^0.8.9;
 
 contract Unishop {
 	address public owner;
-//	address public users;
 
 	struct Item {
 		uint256 id;

@@ -10,7 +10,7 @@ const Navigation = ({ account, setAccount }) => {
     return (
         <nav>
             <div className='nav__brand'>
-                <h1>Unishop</h1>
+                <a href="/"><h1>Unishop</h1></a>
             </div>
 
             <input
@@ -39,10 +39,8 @@ const Navigation = ({ account, setAccount }) => {
                 <li><a href="#Clothing & Jewelry">Clothing & Jewelry</a></li>
                 <li><a href="#Electronics & Gadgets">Electronics & Gadgets</a></li> 
                 <li><a href="#Toys & Gaming">Toys & Gaming</a></li>  
-                <li><a href="Saved Items">Saved Items</a></li>  
-
+                <li><a href="Health & Beauty">Health & Beauty</a></li>  
             </ul>
-
         </nav>
     );
 }

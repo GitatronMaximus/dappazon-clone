@@ -23,12 +23,8 @@ const Section = ({ title, items, togglePop }) => {
                             <p>{ethers.utils.formatUnits(item.cost.toString(), 'ether')} ETH</p>
                         </div>
                     </div>
-
                 ))}
-
             </div>
-
-
         </div>
     );
 }

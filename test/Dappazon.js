@@ -13,9 +13,10 @@ const tokens = (n) => {
   const RATING = 4
   const STOCK = 5
 
+
 describe("Unishop", () => {
-  let Unishop, unishop;
-  let deployer, buyer, feeAccount, attacker;
+  let Unishop, deployer, buyer, feeAccount, attacker
+  let unishop
 
   beforeEach(async () => {
     //setup accounts
@@ -23,51 +24,53 @@ describe("Unishop", () => {
     deployer = accounts[0]
     feeAccount = accounts[1]
     attacker = accounts[2]
-    [deployer, buyer, attacker] = await ethers.getSigners()
+    [deployer, buyer, feeAccount, attacker] = await ethers.getSigners()
 
-    feeAccount = deployer;
-    const feePercent = 3;
+    const feePercent = 3
 
 
     // Deploy contract
     Unishop = await ethers.getContractFactory("Unishop")
     unishop = await Unishop.deploy(feeAccount.address, feePercent)
+
+
   })
 })
-  describe("Deployment", () => {
+describe("Deployment", () => {
 
-    it('Sets the owner', async () => {
-      expect(await unishop.owner()).to.equal(deployer.address)
-    })
+  let unishop
 
-    it('tracks the fee account', async () => {
-      expect(await unishop.feeAccount()).to.equal(feeAccount.address)
-    })
-
-    it('tracks the fee percent', async () => {
-      expect(await unishop.feePercent()).to.equal(feePercent)
-    })
+  it('Sets the owner', async () => {
+    expect(await unishop.owner()).to.equal(deployer.address)
   })
 
-  describe("Listing", () => {
-    let transaction
+  it('tracks the fee account', async () => {
+    expect(await unishop.feeAccount()).to.equal(feeAccount.address)
+  })
 
-    const ID = 3
+  it('tracks the fee percent', async () => {
+    expect(await unishop.feePercent()).to.equal(feePercent)
+  })
+})
+
+describe("Listing", () => {
+  let transaction, unishop
+
+  const ID = 3
 
 
-    beforeEach(async () => {
-      transaction = await unishop.connect(deployer).list(
-        ID,
-        NAME,
-        CATEGORY, 
-        IMAGE, 
-        COST, 
-        RATING, 
-        STOCK
-        )
+  beforeEach(async () => {
+    transaction = await unishop.connect(deployer).list(
+      ID,
+      NAME,
+      CATEGORY, 
+      IMAGE, 
+      COST, 
+      RATING, 
+      STOCK
+      )
 
-      await transaction.wait()       
-    })
+    await transaction.wait()       
 
     it('Returns item attributes', async () => {
       const item = await unishop.items(ID)
@@ -84,28 +87,32 @@ describe("Unishop", () => {
     it("Emits List event", async () => {
       await expect(transaction).to.emit(unishop, "List")
     })
-
-  describe('Failure', async () => {
-
-    it('Rejects invalid user listing', async () => {
-      await expect(unishop.connect(attacker).list(ID, NAME, CATEGORY, IMAGE, COST, RATING, STOCK)).to.be.reverted
-    })
   })
 })
-  describe("Buying", () => {
-    let transaction
 
-    const ID = 3
+describe('Failure', async () => {
+
+  let unishop
+
+  it('Rejects invalid user listing', async () => {
+    await expect(unishop.connect(attacker).list(ID, NAME, CATEGORY, IMAGE, COST, RATING, STOCK)).to.be.reverted
+  })
+})
+
+describe("Buying", () => {
+  let transaction
+
+  const ID = 3
 
 
-    beforeEach(async () => {
-      //List an item
-      transaction = await unishop.connect(deployer).list(ID, NAME, CATEGORY, IMAGE, COST, RATING, STOCK)
-      await transaction.wait()
+  beforeEach(async () => {
+    //List an item
+    transaction = await unishop.connect(deployer).list(ID, NAME, CATEGORY, IMAGE, COST, RATING, STOCK)
+    await transaction.wait()
 
-      //Buy an item
-      transaction = await unishop.connect(buyer).buy(ID, { value: COST })
-    })
+    //Buy an item
+    transaction = await unishop.connect(buyer).buy(ID, { value: COST })
+  })
 
     it("Updates buyer's order count", async () => {
       const result = await unishop.orderCount(buyer.address)
@@ -127,48 +134,47 @@ describe("Unishop", () => {
     it("Emits Buy event", () => {
       expect(transaction).to.emit(unishop, "Buy")
     })
+})
+
+describe("Withdrawing", () => {
+
+  let balanceBefore, unishop
+
+  describe('Success', () => {
+
+    beforeEach(async () => {
+
+    // List an item
+      let transaction = await unishop.connect(deployer).list(ID, NAME, CATEGORY, IMAGE, COST, RATING, STOCK)
+      await transaction.wait()
+
+      // Buy an item
+      transaction = await unishop.connect(buyer).buy(ID, { value: COST })
+      await transaction.wait()
+
+      //Get Deployer balance before
+      balanceBefore = await ethers.provider.getBalance(deployer.address)
+
+      // Withdraw
+      transaction = await unishop.connect(deployer).withdraw()
+      await transaction.wait()
+    })
+
+      it("Updates the owner balance", async () => {
+        const balanceAfter = await ethers.provider.getBalance(deployer.address)
+        expect(balanceAfter).to.be.greaterThan(balanceBefore)
+      })
+
+      it("Updates the contract balance", async () => {
+        const result = await ethers.provider.getBalance(unishop.address)
+        expect(result).to.equal(0)
+      })
   })
+})
+  describe('Failure', () => {
 
-  describe("Withdrawing", () => {
+    it('Rejects invalid owner withdrawal', async () => {
+      await expect(unishop.connect(attacker).withdraw()).to.be.reverted
 
-    let balanceBefore
-
-    describe('Success', () => {
-
-      beforeEach(async () => {
-
-      // List an item
-        let transaction = await unishop.connect(deployer).list(ID, NAME, CATEGORY, IMAGE, COST, RATING, STOCK)
-        await transaction.wait()
-
-        // Buy an item
-        transaction = await unishop.connect(buyer).buy(ID, { value: COST })
-        await transaction.wait()
-
-        //Get Deployer balance before
-        balanceBefore = await ethers.provider.getBalance(deployer.address)
-
-        // Withdraw
-        transaction = await unishop.connect(deployer).withdraw()
-        await transaction.wait()
-      })
-
-        it("Updates the owner balance", async () => {
-          const balanceAfter = await ethers.provider.getBalance(deployer.address)
-          expect(balanceAfter).to.be.greaterThan(balanceBefore)
-        })
-
-        it("Updates the contract balance", async () => {
-          const result = await ethers.provider.getBalance(unishop.address)
-          expect(result).to.equal(0)
-        })
     })
-
-    describe('Failure', () => {
-
-      it('Rejects invalid owner withdrawal', async () => {
-        await expect(unishop.connect(attacker).withdraw()).to.be.reverted
-
-      })
-    })
-  })  
+  })
