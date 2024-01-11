@@ -38,13 +38,7 @@ contract Unishop {
 
 	//Ensure only owner can list items
 	modifier onlyOwner() {
-		require(msg.sender == owner);
 		require(msg.sender == owner, "Unishop: You aren't the owner");
-		_;
-	}
-	//Ensure only approved user can list
-	modifier onlyApproved() {
-		require(isApproved[msg.sender], "Unishop: You aren't authorized");
 		_;
 	}
 
@@ -52,6 +46,7 @@ contract Unishop {
 		feeAccount = _feeAccount;
 		feePercent = _feePercent;
 		owner = msg.sender;
+
 	}
 
 	function list(
@@ -62,7 +57,7 @@ contract Unishop {
 		uint256 _cost,
 		uint256 _rating,
 		uint256 _stock
-	) public {
+	) public onlyOwner {
 
 		//create item struct
 		Item memory item = Item(
@@ -75,11 +70,15 @@ contract Unishop {
 			_stock
 		);
 
+
+
 		//Save item struct to blockchain
 		items[_id] = item;
 
 		//emit an event
 		emit List(_name, _cost, _stock);
+
+
 	}
 
 	//Buy products

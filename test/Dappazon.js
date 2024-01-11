@@ -19,11 +19,7 @@ describe("Unishop", () => {
 
   beforeEach(async () => {
     //setup accounts
-    accounts = await ethers.getSigners()
-    deployer = accounts[0]
-    feeAccount = accounts[1]
-    attacker = accounts[2]
-    buyer = accounts[3]
+
     [deployer, buyer, feeAccount, attacker] = await ethers.getSigners()
 
     const feePercent = 3
@@ -44,7 +40,7 @@ describe("Deployment", () => {
   })
 
   it('tracks the fee percent', async () => {
-    expect(await unishop.feePercent()).to.equal(feePercent)
+    expect(await unishop.feePercent()).to.equal(3)
   })
 })
 
@@ -92,7 +88,7 @@ describe('Failure', async () => {
   })
 })
 
-//describe("Buying", () => {
+describe("Buying", () => {
   let transaction
 
   const ID = 3
@@ -171,4 +167,4 @@ describe("Withdrawing", () => {
 
     })
   })
-//})
+})
