@@ -61,6 +61,8 @@ function App() {
     setElectronics(electronics)
     setClothing(clothing)
     setToys(toys)
+
+    console.log()
   }
 
   useEffect(() => {

@@ -15,14 +15,14 @@ const tokens = (n) => {
 
 
 describe("Unishop", () => {
-  let Unishop, deployer, buyer, feeAccount, attacker, unishop, feePercent
+  let Unishop, deployer, buyer, feeAccount, attacker, unishop, feePercent, user
 
   beforeEach(async () => {
     //setup accounts
 
-    [deployer, buyer, feeAccount, attacker] = await ethers.getSigners()
+    [deployer, buyer, feeAccount, attacker, user] = await ethers.getSigners()
 
-    const feePercent = 3
+    feePercent = 3
 
     // Deploy contract
     Unishop = await ethers.getContractFactory("Unishop")
@@ -33,6 +33,9 @@ describe("Deployment", () => {
 
   it('Sets the owner', async () => {
     expect(await unishop.owner()).to.equal(deployer.address)
+  })
+  it('Adds a user', async () => {
+    expect(await unishop.user()).to.equal(user.address)
   })
 
   it('tracks the fee account', async () => {

@@ -3,6 +3,8 @@ pragma solidity ^0.8.9;
 
 contract Unishop {
 	address public owner;
+	string public name;
+	address public user;
 
 	struct Item {
 		uint256 id;
@@ -32,19 +34,33 @@ contract Unishop {
 	event Buy(address buyer, uint256 orderId, uint256 itemId);
 	event List(string name, uint256 cost, uint256 quantity);
 
-//	function addApprovedUser(address _account) public {
-  // Update mapping
-//}
-
 	//Ensure only owner can list items
 	modifier onlyOwner() {
-		require(msg.sender == owner, "Unishop: You aren't the owner");
+		require(msg.sender == owner, "Unishop: You are not the owner");
 		_;
+	}
+
+	modifier onlyApproved() {
+		require(msg.sender == owner || isApproved[msg.sender], "Unishop: You aren't an approved user");
+		_;
+	}
+
+	function addApprovedUser(address _user) public onlyOwner {
+		isApproved[_user] = true;
+	}
+
+	function setUser(address _user) public onlyOwner {
+    user = _user;
+	}
+
+	function removeApprovedUser(address _user) public onlyOwner {
+		isApproved[_user] = false;
 	}
 
 	constructor(address _feeAccount, uint256 _feePercent) {
 		feeAccount = _feeAccount;
 		feePercent = _feePercent;
+		name = "Unishop";
 		owner = msg.sender;
 
 	}
@@ -57,7 +73,7 @@ contract Unishop {
 		uint256 _cost,
 		uint256 _rating,
 		uint256 _stock
-	) public onlyOwner {
+	) public onlyApproved {
 
 		//create item struct
 		Item memory item = Item(
