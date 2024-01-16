@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@openzeppelin/contracts": "^5.0.1",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
@@ -38,5 +39,21 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^2.0.0",
     "hardhat": "^2.12.2"
-  }
+  },
+  "description": "## Technology Stack & Tools",
+  "main": "hardhat.config.js",
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GitatronMaximus/dappazon-clone.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/GitatronMaximus/dappazon-clone/issues"
+  },
+  "homepage": "https://github.com/GitatronMaximus/dappazon-clone#readme"
 }

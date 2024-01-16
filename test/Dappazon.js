@@ -5,22 +5,21 @@ const tokens = (n) => {
 }
 
 // Global constants for listing an item
-  const ID = 3
-  const NAME = "Shoes"
-  const CATEGORY = "Clothing"
-  const IMAGE ="https://ipfs.io/ipfs/QmTYEboq8raiBs7GTUg2yLXB3PMz6HuBNgNfSZBx5Msztg/shoes.jpg"
-  const COST = tokens(1)
-  const RATING = 4
-  const STOCK = 5
+const ID = 3
+const NAME = "Shoes"
+const CATEGORY = "Clothing"
+const IMAGE ="https://ipfs.io/ipfs/QmTYEboq8raiBs7GTUg2yLXB3PMz6HuBNgNfSZBx5Msztg/shoes.jpg"
+const COST = tokens(1)
+const RATING = 4
+const STOCK = 5
 
 
 describe("Unishop", () => {
-  let Unishop, deployer, buyer, feeAccount, attacker, unishop, feePercent, user
+  let Unishop, deployer, buyer, feeAccount, attacker, unishop, feePercent, user, owner
 
   beforeEach(async () => {
     //setup accounts
-
-    [deployer, buyer, feeAccount, attacker, user] = await ethers.getSigners()
+    [deployer, buyer, feeAccount, attacker, user, owner] = await ethers.getSigners()
 
     feePercent = 3
 
@@ -29,82 +28,137 @@ describe("Unishop", () => {
     unishop = await Unishop.deploy(feeAccount.address, feePercent)
   })
 
-describe("Deployment", () => {
+  describe("Deployment", () => {
 
-  it('Sets the owner', async () => {
-    expect(await unishop.owner()).to.equal(deployer.address)
+    it('Sets the owner', async () => {
+      expect(await unishop.owner()).to.equal(deployer.address)
+    })
+    it('Adds a user', async () => {
+      await unishop.connect(deployer).setUser(user.address)
+      expect(await unishop.user()).to.equal(user.address)
+    })
+
+    it('tracks the fee account', async () => {
+      expect(await unishop.feeAccount()).to.equal(feeAccount.address)
+    })
+
+    it('tracks the fee percent', async () => {
+      expect(await unishop.feePercent()).to.equal(3)
+    })
   })
-  it('Adds a user', async () => {
-    expect(await unishop.user()).to.equal(user.address)
-  })
 
-  it('tracks the fee account', async () => {
-    expect(await unishop.feeAccount()).to.equal(feeAccount.address)
-  })
+  describe("Listing", () => {
+    let transaction
 
-  it('tracks the fee percent', async () => {
-    expect(await unishop.feePercent()).to.equal(3)
-  })
-})
-
-describe("Listing", () => {
-  let transaction
-
-  const ID = 3
+    const ID = 3
+    const itemCost = ethers.utils.parseEther("1"); // Item cost of 1 Ether
+    const feeAmount = itemCost.mul(3).div(100); // 3% listing fee
+    const totalCost = itemCost.add(feeAmount); // Total cost including the listing fee
 
 
-  beforeEach(async () => {
-    transaction = await unishop.connect(deployer).list(
-      ID,
-      NAME,
-      CATEGORY, 
-      IMAGE, 
-      COST, 
+    beforeEach(async () => {
+      transaction = await unishop.connect(deployer).list(
+        ID,
+        NAME,
+        CATEGORY, 
+        IMAGE, 
+        COST, 
       RATING, 
-      STOCK
+        STOCK
+        )
+
+      await transaction.wait()       
+
+      await unishop.connect(user).list(
+        ID,
+        NAME,
+        CATEGORY, 
+        IMAGE, 
+        COST, 
+        RATING, 
+        STOCK,
+        { value: feeAmount } // Send the total cost with the transaction
       )
 
-    await transaction.wait()       
+      await transaction.wait()
 
-    it('Returns item attributes', async () => {
-      const item = await unishop.items(ID)
-      expect(item.id).to.equal(ID)
-      expect(item.name).to.equal(NAME)
-      expect(item.category).to.equal(CATEGORY)
-      expect(item.image).to.equal(IMAGE)
-      expect(item.cost).to.equal(COST)
-      expect(item.rating).to.equal(RATING)
-      expect(item.stock).to.equal(STOCK)
 
+      it('Returns item attributes', async () => {
+        const item = await unishop.items(ID)
+        expect(item.id).to.equal(ID)
+        expect(item.name).to.equal(NAME)
+        expect(item.category).to.equal(CATEGORY)
+        expect(item.image).to.equal(IMAGE)
+        expect(item.cost).to.equal(COST)
+        expect(item.rating).to.equal(RATING)
+        expect(item.stock).to.equal(STOCK)
+
+      })
+
+      it('Charges fee for listing', async () => {
+
+        // Get initial balance of the user
+        const balanceBefore = await user.getBalance();
+
+        // Simulate listing an item
+        const listTx = await unishop.connect(user).list(
+          ID,
+          NAME,
+          CATEGORY, 
+          IMAGE, 
+          COST, 
+          RATING, 
+          STOCK,
+            { value: feeAmount } // User sends item cost + listing fee
+        )
+        const receipt = await listTx.wait();
+        const gasUsed = receipt.gasUsed.mul(receipt.effectiveGasPrice);
+
+        // Get balance of the user after listing
+        const balanceAfter = await user.getBalance();
+
+        // Calculate the actual Ether spent (including gas)
+        const actualEtherSpent = balanceBefore.sub(balanceAfter).add(gasUsed);
+
+        // Assert that the actual Ether spent matches the item cost plus the expected listing fee
+        expect(actualEtherSpent).to.equal(feeAmount);
+      })
+
+      it("Transfers listing fee to fee account", async () => {
+        const balanceAfter= await feeAccount.getBalance();
+        expect(balanceAfter).to.equal(balanceBefore + feeAmount)
+      })
+
+      it("Emits List event", async () => {
+        await expect(transaction).to.emit(unishop, "List")
+      })
     })
+  })
 
-    it("Emits List event", async () => {
-      await expect(transaction).to.emit(unishop, "List")
+  describe('Failure', async () => {
+
+    it('Rejects invalid user listing', async () => {
+      await expect(unishop.connect(attacker).list(ID, NAME, CATEGORY, IMAGE, COST, RATING, STOCK)).to.be.revertedWith("Unishop: You are not authorized to list on this platform")
     })
   })
-})
 
-describe('Failure', async () => {
+  describe("Buying", () => {
 
-  it('Rejects invalid user listing', async () => {
-    await expect(unishop.connect(attacker).list(ID, NAME, CATEGORY, IMAGE, COST, RATING, STOCK)).to.be.reverted
-  })
-})
+    let transaction
 
-describe("Buying", () => {
-  let transaction
+    const ID = 3
+    const itemCost = ethers.utils.parseEther("1"); // Item cost of 1 Ether
+    const feeAmount = itemCost.mul(3).div(100); // 3% listing fee
+    //const totalCost = itemCost.add(feeAmount); // Total cost including the listing fee
 
-  const ID = 3
+    beforeEach(async () => {
+      //List an item
+      transaction = await unishop.connect(deployer, user).list(ID, NAME, CATEGORY, IMAGE, COST, RATING, STOCK, { value: feeAmount })
+      await transaction.wait()
 
-
-  beforeEach(async () => {
-    //List an item
-    transaction = await unishop.connect(deployer).list(ID, NAME, CATEGORY, IMAGE, COST, RATING, STOCK)
-    await transaction.wait()
-
-    //Buy an item
-    transaction = await unishop.connect(buyer).buy(ID, { value: COST })
-  })
+      //Buy an item
+      transaction = await unishop.connect(buyer).buy(ID, { value: COST })
+    })
 
     it("Updates buyer's order count", async () => {
       const result = await unishop.orderCount(buyer.address)
@@ -126,31 +180,45 @@ describe("Buying", () => {
     it("Emits Buy event", () => {
       expect(transaction).to.emit(unishop, "Buy")
     })
-})
+  })
 
-describe("Withdrawing", () => {
+  describe("Failure", async () => { 
 
-  let balanceBefore
+    let insufficientAmount = ethers.utils.parseEther("1/2");
 
-  describe('Success', () => {
+    it("Rejects insufficient funds", async () => {
+      await expect(unishop.connect(buyer).buy(ID, {value: insufficientAmount} )).to.be.revertedWith('Unishop: Insufficient funds for purchase');
 
-    beforeEach(async () => {
-
-    // List an item
-      let transaction = await unishop.connect(deployer).list(ID, NAME, CATEGORY, IMAGE, COST, RATING, STOCK)
-      await transaction.wait()
-
-      // Buy an item
-      transaction = await unishop.connect(buyer).buy(ID, { value: COST })
-      await transaction.wait()
-
-      //Get Deployer balance before
-      balanceBefore = await ethers.provider.getBalance(deployer.address)
-
-      // Withdraw
-      transaction = await unishop.connect(deployer).withdraw()
-      await transaction.wait()
     })
+  })
+
+  describe("Withdrawing", () => {
+
+    let balanceBefore, feeAmount, user
+
+    describe('Success', () => {
+
+      beforeEach(async () => {
+
+        const feePercent = 3; 
+        feeAmount = COST.mul(feePercent).div(100);
+
+
+        // List an item
+        let transaction = await unishop.connect(deployer).list(ID, NAME, CATEGORY, IMAGE, COST, RATING, STOCK, { value: feeAmount })
+        await transaction.wait()
+
+        // Buy an item
+        transaction = await unishop.connect(buyer).buy(ID, { value: COST })
+        await transaction.wait()
+
+        //Get Deployer balance before
+        balanceBefore = await ethers.provider.getBalance(deployer.address)
+
+        // Withdraw
+        transaction = await unishop.connect(deployer).withdraw()
+        await transaction.wait()
+      })
 
       it("Updates the owner balance", async () => {
         const balanceAfter = await ethers.provider.getBalance(deployer.address)
@@ -161,13 +229,13 @@ describe("Withdrawing", () => {
         const result = await ethers.provider.getBalance(unishop.address)
         expect(result).to.equal(0)
       })
-  })
-})
-  describe('Failure', () => {
+    })
+  
+    describe('Failure', () => {
 
-    it('Rejects invalid owner withdrawal', async () => {
-      await expect(unishop.connect(attacker).withdraw()).to.be.reverted
-
+      it('Rejects invalid owner withdrawal', async () => {
+        await expect(unishop.connect(attacker).withdraw()).to.be.reverted
+      })
     })
   })
 })

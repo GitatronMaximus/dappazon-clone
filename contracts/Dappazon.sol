@@ -34,15 +34,22 @@ contract Unishop {
 	event Buy(address buyer, uint256 orderId, uint256 itemId);
 	event List(string name, uint256 cost, uint256 quantity);
 
-	//Ensure only owner can list items
+	//Ensure only owner can withdraw funds
 	modifier onlyOwner() {
 		require(msg.sender == owner, "Unishop: You are not the owner");
 		_;
 	}
 
 	modifier onlyApproved() {
-		require(msg.sender == owner || isApproved[msg.sender], "Unishop: You aren't an approved user");
+		require(msg.sender == owner || isApproved[msg.sender], "Unishop: You are not authorized to list on this platform");
 		_;
+	}
+
+	constructor(address _feeAccount, uint256 _feePercent) {
+		feeAccount = _feeAccount;
+		feePercent = _feePercent;
+		name = "Unishop";
+		owner = msg.sender;
 	}
 
 	function addApprovedUser(address _user) public onlyOwner {
@@ -57,14 +64,6 @@ contract Unishop {
 		isApproved[_user] = false;
 	}
 
-	constructor(address _feeAccount, uint256 _feePercent) {
-		feeAccount = _feeAccount;
-		feePercent = _feePercent;
-		name = "Unishop";
-		owner = msg.sender;
-
-	}
-
 	function list(
 		uint256 _id, 
 		string memory _name, 
@@ -73,7 +72,16 @@ contract Unishop {
 		uint256 _cost,
 		uint256 _rating,
 		uint256 _stock
-	) public onlyApproved {
+	) public payable onlyApproved {
+
+		 // Calculate the fee
+    uint256 feeAmount = (_cost * feePercent) / 100;
+
+    // Ensure the sent value covers the fee
+    require(msg.value >= feeAmount, "Unishop: Insufficient fee");
+
+    // Transfer the fee to the owner
+    payable(feeAccount).transfer(feeAmount);
 
 		//create item struct
 		Item memory item = Item(
@@ -86,15 +94,11 @@ contract Unishop {
 			_stock
 		);
 
-
-
 		//Save item struct to blockchain
 		items[_id] = item;
 
 		//emit an event
 		emit List(_name, _cost, _stock);
-
-
 	}
 
 	//Buy products
@@ -124,7 +128,12 @@ contract Unishop {
 
 		//Withdraw funds
 	function withdraw() public onlyOwner {
-		(bool success, ) = owner.call{value: address(this).balance}("");
-		require(success);
-	}
+    uint256 balance = address(this).balance;
+
+    // Checks-Effects-Interactions Pattern
+   // address(this).balance = 0;
+    // Interact with external addresses
+    (bool success, ) = owner.call{value: balance}("");
+    require(success, "Withdrawal failed");
+  }
 }
