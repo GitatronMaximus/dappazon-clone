@@ -1,4 +1,6 @@
-const { expect } = require("chai")
+const { expect } = require("chai");
+const { ethers } = require('hardhat');
+
 
 const tokens = (n) => {
   return ethers.utils.parseUnits(n.toString(), 'ether')
@@ -19,7 +21,8 @@ describe("Unishop", () => {
 
   beforeEach(async () => {
     //setup accounts
-    [deployer, buyer, feeAccount, attacker, user, owner] = await ethers.getSigners()
+    [deployer, buyer, feeAccount, attacker, user] = await ethers.getSigners()
+    accounts = await ethers.getSigners()
 
     feePercent = 3
 
@@ -47,29 +50,19 @@ describe("Unishop", () => {
     })
   })
 
-  describe("Listing", () => {
-    let transaction
+  describe("Listing", async () => {
+    let transaction, getBalance
 
     const ID = 3
     const itemCost = ethers.utils.parseEther("1"); // Item cost of 1 Ether
     const feeAmount = itemCost.mul(3).div(100); // 3% listing fee
     const totalCost = itemCost.add(feeAmount); // Total cost including the listing fee
 
+    const user = 
 
     beforeEach(async () => {
+
       transaction = await unishop.connect(deployer).list(
-        ID,
-        NAME,
-        CATEGORY, 
-        IMAGE, 
-        COST, 
-      RATING, 
-        STOCK
-        )
-
-      await transaction.wait()       
-
-      await unishop.connect(user).list(
         ID,
         NAME,
         CATEGORY, 
@@ -77,11 +70,11 @@ describe("Unishop", () => {
         COST, 
         RATING, 
         STOCK,
-        { value: feeAmount } // Send the total cost with the transaction
-      )
+        { value: feeAmount }
+        )
 
       await transaction.wait()
-
+    })       
 
       it('Returns item attributes', async () => {
         const item = await unishop.items(ID)
@@ -97,9 +90,6 @@ describe("Unishop", () => {
 
       it('Charges fee for listing', async () => {
 
-        // Get initial balance of the user
-        const balanceBefore = await user.getBalance();
-
         // Simulate listing an item
         const listTx = await unishop.connect(user).list(
           ID,
@@ -109,7 +99,7 @@ describe("Unishop", () => {
           COST, 
           RATING, 
           STOCK,
-            { value: feeAmount } // User sends item cost + listing fee
+            { value: feeAmount } // User sends item listing fee
         )
         const receipt = await listTx.wait();
         const gasUsed = receipt.gasUsed.mul(receipt.effectiveGasPrice);
@@ -238,4 +228,3 @@ describe("Unishop", () => {
       })
     })
   })
-})
