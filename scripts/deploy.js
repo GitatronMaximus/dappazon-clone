@@ -15,9 +15,12 @@ async function main() {
   //setup accounts
   const [deployer] = await ethers.getSigners()
 
+  const feeAccount = '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC'
+  const feePercent = 3
+
   //deploy unishop
   const Unishop = await hre.ethers.getContractFactory("Unishop")
-  const unishop = await Unishop.deploy()
+  const unishop = await Unishop.deploy(feeAccount, feePercent)
   await unishop.deployed()
 
   console.log(`Deployed Unishop Contract at: ${unishop.address}\n`)
