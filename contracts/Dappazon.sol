@@ -23,6 +23,7 @@ contract Unishop {
 	//charge fee for listing
 	address public feeAccount;
 	uint256 public feePercent;
+	uint256 public gasLimit;
 
 	//list items to blockchain (like a database)
 	mapping(uint256 => Item) public items;
@@ -75,10 +76,12 @@ contract Unishop {
 	) public payable onlyApproved {
 
 		 // Calculate the fee
-    uint256 feeAmount = (_cost * feePercent) / 100;
+    uint256 feeAmount = (_cost * 3) / 100;
+
+
 
     // Ensure the sent value covers the fee
-    require(msg.value >= feeAmount, "Unishop: Insufficient fee");
+    require(msg.value >= feeAmount,  "Unishop: Insufficient fee");
 
     // Transfer the fee to the owner
     payable(feeAccount).transfer(feeAmount);

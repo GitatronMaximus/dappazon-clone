@@ -27,15 +27,19 @@ async function main() {
 
   //listing items
   for (let i = 0; i < items.length; i++) {
+    const feeAmount = ethers.utils.parseEther((items[i].price * 0.03).toString()); // Calculate the 3% fee
+
     const transaction = await unishop.connect(deployer).list(
       items[i].id,
       items[i].name,
       items[i].category,
       items[i].image,
-      tokens(items[i].price),
+      ethers.utils.parseEther(items[i].price.toString()),      
       items[i].rating,
       items[i].stock,
-
+      {
+        value: feeAmount
+      }
     )
 
     await transaction.wait()

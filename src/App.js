@@ -58,6 +58,7 @@ function App() {
     const clothing = items.filter((item) => item.category === 'clothing')
     const toys = items.filter((item) => item.category === 'toys')
 
+
     setElectronics(electronics)
     setClothing(clothing)
     setToys(toys)
@@ -72,7 +73,7 @@ function App() {
       <Navigation account={account} setAccount={setAccount} />
 
 
-      <h2>Unishop Best Sellers</h2>
+      <h2>Welcome to Unishop</h2>
 
       {electronics && clothing && toys && (
 
