@@ -104,9 +104,36 @@ describe("Unishop", () => {
 
 
   describe('Failure', async () => {
+  let incorrectEthAmount
+
+    beforeEach(async () => {
+    const itemCost = ethers.utils.parseEther("1");
+    const feeAmount = itemCost.mul(3).div(100);
+    const incorrectEthAmount = itemCost.mul(2).div(100);
+
+    transaction = await unishop.connect(deployer).list(
+        ID,
+        NAME,
+        CATEGORY, 
+        IMAGE, 
+        COST, 
+        RATING, 
+        STOCK,
+        { value: feeAmount }
+        )
+
+      await transaction.wait()
+
+      balanceAfter = await ethers.provider.getBalance(feeAccount.address)
+
+    })
 
     it('Rejects invalid user listing', async () => {
       await expect(unishop.connect(attacker).list(ID, NAME, CATEGORY, IMAGE, COST, RATING, STOCK)).to.be.revertedWith("Unishop: You are not authorized to list on this platform")
+    })
+
+    it('Fails to send ETH with transaction', async () => {
+      await expect(unishop.connect(deployer).list(ID, NAME, CATEGORY, IMAGE, COST, RATING, STOCK, { value: incorrectEthAmount })).to.be.reverted
     })
   })
 
