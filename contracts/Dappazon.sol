@@ -76,15 +76,15 @@ contract Unishop {
 	) public payable onlyApproved {
 
 		 // Calculate the fee
-    uint256 feeAmount = (_cost * 3) / 100;
+	    uint256 feeAmount = (_cost * 3) / 100;
 
 
 
-    // Ensure the sent value covers the fee
-    require(msg.value >= feeAmount,  "Unishop: Insufficient fee");
+	    // Ensure the sent value covers the fee
+	    require(msg.value >= feeAmount,  "Unishop: Insufficient fee");
 
-    // Transfer the fee to the owner
-    payable(feeAccount).transfer(feeAmount);
+	    // Transfer the fee to the owner
+	    payable(feeAccount).transfer(feeAmount);
 
 		//create item struct
 		Item memory item = Item(
@@ -131,12 +131,12 @@ contract Unishop {
 
 		//Withdraw funds
 	function withdraw() public onlyOwner {
-    uint256 balance = address(this).balance;
+	    uint256 balance = address(this).balance;
 
-    // Checks-Effects-Interactions Pattern
-   // address(this).balance = 0;
-    // Interact with external addresses
-    (bool success, ) = owner.call{value: balance}("");
-    require(success, "Withdrawal failed");
-  }
+	    // Checks-Effects-Interactions Pattern
+	   // address(this).balance = 0;
+	    // Interact with external addresses
+	    (bool success, ) = owner.call{value: balance}("");
+	    require(success, "Withdrawal failed");
+  	}
 }
